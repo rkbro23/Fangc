@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FANCOD Player · RK</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        /* ── Reset & Root ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            transition: background-color .25s, color .25s, border-color .25s;
+        }
+
+        :root {
+            --bg: #0a0a0a;
+            --card: #141414;
+            --text: #e8e8e8;
+            --text-muted: #888;
+            --border: #2a2a2a;
+            --accent: #00ff00;
+            --accent-dim: rgba(0, 255, 0, .12);
+            --shadow: 0 8px 24px rgba(0, 0, 0, .6);
+            --radius: 12px;
+        }
+
+        [data-theme="light"] {
+            --bg: #f0f0f0;
+            --card: #ffffff;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --border: #ddd;
+            --shadow: 0 8px 24px rgba(0, 0, 0, .10);
+            --accent-dim: rgba(0, 200, 0, .10);
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 8px;
+        }
+
+        /* ── Header ── */
+        header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: .75rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(6px);
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: .75rem;
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -.5px;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .logo span {
+            color: var(--accent);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+        }
+
+        .icon-btn {
+            background: var(--accent-dim);
+            border: 1px solid transparent;
+            color: var(--text);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: .2s ease;
+        }
+        .icon-btn:hover {
+            background: var(--accent);
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        .back-btn {
+            background: var(--accent-dim);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: .4rem 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-weight: 600;
+            font-size: .9rem;
+            transition: .2s ease;
+        }
+        .back-btn:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        /* ── Main ── */
+        main {
+            flex: 1;
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.5rem 1.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* ── Player Wrapper ── */
+        .player-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 */
+            height: 0;
+            overflow: hidden;
+            border-radius: var(--radius);
+            background: #000;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .player-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* ── Match Info ── */
+        .match-info {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.2rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .match-info .teams {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .match-info .team {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .match-info .team img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: var(--bg);
+            padding: 3px;
+        }
+        .match-info .team .name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .match-info .vs {
+            font-weight: 800;
+            color: var(--text-muted);
+            font-size: .9rem;
+        }
+        .match-info .meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+            font-size: .85rem;
+            color: var(--text-muted);
+        }
+        .match-info .meta i {
+            color: var(--accent);
+            width: 1.2rem;
+        }
+        .match-info .status-badge {
+            background: var(--accent);
+            color: #000;
+            font-weight: 700;
+            font-size: .7rem;
+            padding: .2rem .8rem;
+            border-radius: 30px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+        }
+        .match-info .status-badge .pulse {
+            width: 6px;
+            height: 6px;
+            background: #000;
+            border-radius: 50%;
+            animation: blink 1.2s infinite;
+        }
+        @keyframes blink {
+            0%,100%{ opacity: 1; }
+            50%{ opacity: .2; }
+        }
+
+        /* ── Server Buttons ── */
+        .servers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .6rem;
+            margin-top: .5rem;
+        }
+        .server-btn {
+            background: var(--accent-dim);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: .5rem 1.2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: .8rem;
+            cursor: pointer;
+            transition: .2s ease;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+        .server-btn:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+        .server-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            box-shadow: 0 0 16px var(--accent-dim);
+        }
+        .server-btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+        .server-label {
+            font-size: .75rem;
+            color: var(--text-muted);
+            margin-right: .2rem;
+        }
+
+        /* ── Loading / Error ── */
+        .loading-wrap,
+        .error-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1rem;
+            text-align: center;
+            gap: 1rem;
+        }
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .error-wrap {
+            color: #ff6b6b;
+        }
+        .error-wrap i {
+            font-size: 2.4rem;
+        }
+
+        /* ── Footer ── */
+        footer {
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 1.2rem 1.5rem;
+            text-align: center;
+            font-size: .75rem;
+            color: var(--text-muted);
+        }
+        footer .disclaimer {
+            max-width: 700px;
+            margin: 0 auto .3rem;
+            opacity: .7;
+        }
+        footer .copy {
+            opacity: .5;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .match-info {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .match-info .teams {
+                justify-content: center;
+            }
+            .match-info .meta {
+                justify-content: center;
+            }
+            .servers {
+                justify-content: center;
+            }
+            .logo {
+                font-size: 1.3rem;
+            }
+            main {
+                padding: 1rem 1rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">FANCOD <span>·</span> RK</a>
+            <div class="controls">
+                <button class="back-btn" onclick="window.location.href='index.html'">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Player -->
+        <div class="player-wrapper" id="playerWrapper">
+            <div class="loading-wrap">
+                <div class="spinner"></div>
+                <p>Loading stream …</p>
+            </div>
+        </div>
+
+        <!-- Match Info & Servers -->
+        <div id="infoArea">
+            <div class="loading-wrap">
+                <div class="spinner"></div>
+                <p>Loading match details …</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="disclaimer">
+            <i class="fas fa-shield-alt"></i> Educational purposes only. We do not host any streams.
+            All streams are fetched from external sources.
+        </div>
+        <div class="copy">&copy; 2025 FANCOD · RK. All rights reserved.</div>
+    </footer>
+
+    <script>
+        /* ============================================================
+           CONFIG
+           ============================================================ */
+        const JSON_URL =
+            'https://raw.githubusercontent.com/doctor-8trange/zyphx8/refs/heads/main/data/fancode.json';
+        const PLAYER_WRAPPER =
+            'https://anym3u8player.com/ultimate-player-generator/player.php?player=jwplayer&url=';
+
+        /* ============================================================
+           DOM REFS
+           ============================================================ */
+        const playerWrapper = document.getElementById('playerWrapper');
+        const infoArea = document.getElementById('infoArea');
+        const themeBtn = document.getElementById('themeBtn');
+
+        /* ============================================================
+           THEME
+           ============================================================ */
+        (function initTheme() {
+            const stored = localStorage.getItem('fc-theme');
+            const prefers = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            const theme = stored || prefers;
+            document.documentElement.setAttribute('data-theme', theme);
+            updateThemeIcon(theme);
+        })();
+
+        function updateThemeIcon(theme) {
+            const icon = themeBtn.querySelector('i');
+            icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+
+        themeBtn.addEventListener('click', () => {
+            const cur = document.documentElement.getAttribute('data-theme');
+            const next = cur === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('fc-theme', next);
+            updateThemeIcon(next);
+        });
+
+        /* ============================================================
+           HELPERS
+           ============================================================ */
+           function safe(str) {
+    if (!str && str !== 0) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    // Wrapping str in String() converts numbers to text and prevents the crash
+    return String(str).replace(/[&<>"']/g, m => map[m]);
+}
+
+
+        function getVal(obj, path, fallback) {
+            try {
+                const parts = path.split('.');
+                let cur = obj;
+                for (const p of parts) {
+                    if (cur === null || cur === undefined) return fallback;
+                    cur = cur[p];
+                }
+                return (cur === null || cur === undefined) ? fallback : cur;
+            } catch (_) { return fallback; }
+        }
+
+        function isLive(status) {
+            if (!status) return false;
+            const s = String(status).toUpperCase();
+            return s === 'LIVE' || s === 'STARTED';
+        }
+
+        function encodeM3U8(url) {
+            if (!url) return '';
+            // If it already contains the wrapper, return as-is
+            if (url.includes('anym3u8player.com')) return url;
+            // Assume it's a raw m3u8 URL and wrap it
+            return PLAYER_WRAPPER + encodeURIComponent(url);
+        }
+
+        /* ============================================================
+           EXTRACT MATCH ID FROM URL
+           ============================================================ */
+        function getMatchId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        /* ============================================================
+           LOAD MATCH
+           ============================================================ */
+        async function loadMatch() {
+            const matchId = getMatchId();
+            if (!matchId) {
+                showError('No match ID provided in URL.');
+                return;
+            }
+
+            try {
+                const resp = await fetch(JSON_URL);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const json = await resp.json();
+                const matches = json?.matches;
+                if (!Array.isArray(matches)) throw new Error('Invalid data format');
+
+                const match = matches.find(m => String(getVal(m, 'match_id', '')) === matchId);
+                if (!match) throw new Error('Match not found.');
+
+                renderMatch(match);
+
+            } catch (err) {
+                console.error('Player error:', err);
+                showError(err.message);
+            }
+        }
+
+        /* ============================================================
+           RENDER MATCH
+           ============================================================ */
+        function renderMatch(match) {
+            const id = getVal(match, 'match_id', '');
+            const status = getVal(match, 'status', '');
+            const live = isLive(status);
+            const tournament = getVal(match, 'tournament', '');
+            const category = getVal(match, 'category', '');
+
+            // Teams
+            const t1 = getVal(match, 'team.0', {});
+            const t2 = getVal(match, 'team.1', {});
+            const t1Name = getVal(t1, 'name', getVal(t1, 'shortName', 'Team 1'));
+            const t2Name = getVal(t2, 'name', getVal(t2, 'shortName', 'Team 2'));
+            const t1Logo = getVal(t1, 'flag.src', '');
+            const t2Logo = getVal(t2, 'flag.src', '');
+
+            // Streams: primary + backup
+            const streaming = getVal(match, 'STREAMING_CDN', {});
+            const primary = getVal(streaming, 'Primary_Playback_URL', null);
+            const backup = getVal(streaming, 'backup', {}); // object of key->url
+
+            // Build server list: primary first, then backup entries
+            const servers = [];
+            if (primary) {
+                servers.push({ label: 'Primary', url: primary, isPrimary: true });
+            }
+            // Backup keys: iterate over object keys
+            for (const [key, url] of Object.entries(backup)) {
+                if (url) {
+                    // generate readable label: e.g., "fancode_cdn" -> "Fancode CDN"
+                    const label = key
+                        .replace(/_/g, ' ')
+                        .replace(/\b\w/g, c => c.toUpperCase());
+                    servers.push({ label: label, url: url, isPrimary: false });
+                }
+            }
+
+            if (!servers.length) {
+                showError('No stream URLs available for this match.');
+                return;
+            }
+
+            // Build info HTML
+            const statusHtml = live ?
+                `<span class="status-badge"><span class="pulse"></span> LIVE</span>` :
+                `<span class="status-badge" style="background:var(--border);color:var(--text-muted);">${safe(status) || 'Upcoming'}</span>`;
+
+            let infoHtml = `
+                <div class="match-info">
+                    <div class="teams">
+                        <div class="team">
+                            ${t1Logo ? `<img src="${safe(t1Logo)}" alt="${safe(t1Name)}" onerror="this.style.display='none'">` : ''}
+                            <span class="name">${safe(t1Name)}</span>
+                        </div>
+                        <span class="vs">VS</span>
+                        <div class="team">
+                            ${t2Logo ? `<img src="${safe(t2Logo)}" alt="${safe(t2Name)}" onerror="this.style.display='none'">` : ''}
+                            <span class="name">${safe(t2Name)}</span>
+                        </div>
+                    </div>
+                    <div class="meta">
+                        ${tournament ? `<span><i class="fas fa-trophy"></i> ${safe(tournament)}</span>` : ''}
+                        ${category ? `<span><i class="fas fa-tag"></i> ${safe(category)}</span>` : ''}
+                        ${statusHtml}
+                    </div>
+                </div>
+            `;
+
+            // Server buttons
+            let serverHtml = `<div class="servers">`;
+            servers.forEach((srv, idx) => {
+                const activeClass = idx === 0 ? 'active' : '';
+                serverHtml += `
+                    <button class="server-btn ${activeClass}" data-url="${safe(srv.url)}" data-label="${safe(srv.label)}">
+                        <i class="fas fa-server"></i> ${safe(srv.label)}
+                    </button>
+                `;
+            });
+            serverHtml += `</div>`;
+
+            infoHtml += serverHtml;
+
+            // Insert info
+            infoArea.innerHTML = infoHtml;
+
+            // Insert player with first stream (primary or first backup)
+            const firstUrl = servers[0].url;
+            const wrapped = encodeM3U8(firstUrl);
+            playerWrapper.innerHTML = `
+                <iframe src="${safe(wrapped)}" 
+                        allowfullscreen 
+                        allow="autoplay; fullscreen"
+                        loading="lazy">
+                </iframe>
+            `;
+
+            // Attach server button events
+            document.querySelectorAll('.server-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const url = this.dataset.url;
+                    if (!url) return;
+                    const wrapped = encodeM3U8(url);
+                    const iframe = playerWrapper.querySelector('iframe');
+                    if (iframe) {
+                        iframe.src = wrapped;
+                    }
+                    // Update active state
+                    document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        }
+
+        /* ============================================================
+           ERROR HANDLING
+           ============================================================ */
+        function showError(msg) {
+            playerWrapper.innerHTML = `
+                <div class="error-wrap">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <h3>Stream Error</h3>
+                    <p>${safe(msg)}</p>
+                    <button class="back-btn" onclick="window.location.href='index.html'" style="margin-top:.5rem;">
+                        <i class="fas fa-arrow-left"></i> Back to Matches
+                    </button>
+                </div>
+            `;
+            infoArea.innerHTML = '';
+        }
+
+        /* ============================================================
+           BOOT
+           ============================================================ */
+        loadMatch();
+    </script>
+</body>
+</html>
