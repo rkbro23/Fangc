@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FANCOD Player · RK</title>
+    <title>fc Player · RK</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
         /* ── Reset & Root ── */
@@ -371,7 +371,7 @@
 
     <header>
         <div class="header-content">
-            <a href="index.html" class="logo">FANCOD <span>·</span> RK</a>
+            <a href="index.html" class="logo">FC <span>·</span> RK</a>
             <div class="controls">
                 <button class="back-btn" onclick="window.location.href='index.html'">
                     <i class="fas fa-arrow-left"></i> Back
@@ -403,10 +403,10 @@
 
     <footer>
         <div class="disclaimer">
-            <i class="fas fa-shield-alt"></i> Educational purposes only. We do not host any streams.
+            <i class="fas fa-shield-alt"></i> We do not host any streams.
             All streams are fetched from external sources.
         </div>
-        <div class="copy">&copy; 2025 FANCOD · RK. All rights reserved.</div>
+        <div class="copy">&copy; 2024 IPTVM3Y FC.</div>
     </footer>
 
     <script>
@@ -416,7 +416,7 @@
         const JSON_URL =
             'https://raw.githubusercontent.com/doctor-8trange/zyphx8/refs/heads/main/data/fancode.json';
         const PLAYER_WRAPPER =
-            'https://anym3u8player.com/ultimate-player-generator/player.php?player=jwplayer&url=';
+            'https://fc-proxy-jj6e.onrender.com/';
 
         /* ============================================================
            DOM REFS
@@ -481,7 +481,7 @@
         function encodeM3U8(url) {
             if (!url) return '';
             // If it already contains the wrapper, return as-is
-            if (url.includes('anym3u8player.com')) return url;
+            if (url.includes('fc-proxy-jj6e.onrender.com')) return url;
             // Assume it's a raw m3u8 URL and wrap it
             return PLAYER_WRAPPER + encodeURIComponent(url);
         }
