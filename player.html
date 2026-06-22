@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FANCOD · RK — HLS Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        /* ── Reset & Root ── */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        :root {
+            --bg: #0a0a0a;
+            --card: #141414;
+            --card-hover: #1c1c1c;
+            --text: #e8e8e8;
+            --text-muted: #888;
+            --border: #2a2a2a;
+            --accent: #00ff00;
+            --accent-dim: rgba(0, 255, 0, .10);
+            --accent-glow: rgba(0, 255, 0, .25);
+            --red: #ff4444;
+            --yellow: #ffbb00;
+            --radius: 12px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, .7);
+            --transition: .25s ease;
+        }
+
+        [data-theme="light"] {
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --card-hover: #f5f5f5;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --border: #ddd;
+            --shadow: 0 8px 32px rgba(0, 0, 0, .08);
+            --accent-dim: rgba(0, 200, 0, .08);
+            --accent-glow: rgba(0, 200, 0, .20);
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+
+        /* ── Header ── */
+        header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: .6rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            transition: background var(--transition), border var(--transition);
+        }
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: .6rem;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -.5px;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+        .logo span {
+            color: var(--accent);
+        }
+        .logo small {
+            font-size: .65rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            letter-spacing: .3px;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .icon-btn {
+            background: var(--accent-dim);
+            border: 1px solid transparent;
+            color: var(--text);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: background var(--transition), transform var(--transition), color var(--transition);
+        }
+        .icon-btn:hover {
+            background: var(--accent);
+            color: #000;
+            transform: scale(1.05);
+        }
+        .back-btn {
+            background: var(--accent-dim);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: .35rem 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-weight: 600;
+            font-size: .85rem;
+            transition: background var(--transition), color var(--transition), border var(--transition);
+        }
+        .back-btn:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        /* ── Main ── */
+        main {
+            flex: 1;
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.2rem 1.2rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        /* ── Player Container ── */
+        .player-container {
+            position: relative;
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: #000;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .player-container video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #000;
+            object-fit: contain;
+        }
+
+        /* ── Player Overlay (loading / error) ── */
+        .player-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, .7);
+            backdrop-filter: blur(4px);
+            gap: .8rem;
+            z-index: 5;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .4s ease;
+        }
+        .player-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .player-overlay .spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .player-overlay p {
+            color: #fff;
+            font-size: .9rem;
+            opacity: .8;
+        }
+        .player-overlay .error-icon {
+            font-size: 2.4rem;
+            color: var(--red);
+        }
+        .player-overlay .error-msg {
+            color: #fff;
+            font-size: .95rem;
+            max-width: 80%;
+            text-align: center;
+        }
+        .player-overlay .retry-btn {
+            margin-top: .5rem;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: .5rem 1.6rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: .85rem;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: transform .2s;
+        }
+        .player-overlay .retry-btn:hover {
+            transform: scale(1.04);
+        }
+
+        /* ── Buffering bar ── */
+        .buffering-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            width: 0%;
+            z-index: 6;
+            transition: width .15s ease;
+            opacity: 0;
+        }
+        .buffering-bar.active {
+            opacity: 1;
+        }
+
+        /* ── Live Badge (on video) ── */
+        .live-badge {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            background: var(--red);
+            color: #fff;
+            font-weight: 700;
+            font-size: .7rem;
+            padding: .2rem .8rem .2rem .6rem;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            z-index: 4;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            box-shadow: 0 2px 12px rgba(255, 0, 0, .3);
+            opacity: 0;
+            transition: opacity .4s;
+        }
+        .live-badge.visible {
+            opacity: 1;
+        }
+        .live-badge .dot {
+            width: 7px;
+            height: 7px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse-dot 1.2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .2;
+            }
+        }
+
+        /* ── Match Info ── */
+        .match-info {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.4rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: .8rem;
+            transition: background var(--transition), border var(--transition);
+        }
+        .match-info .teams {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .match-info .team {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .match-info .team img {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: var(--bg);
+            padding: 2px;
+        }
+        .match-info .team .name {
+            font-weight: 600;
+            font-size: .95rem;
+        }
+        .match-info .vs {
+            font-weight: 800;
+            color: var(--text-muted);
+            font-size: .8rem;
+        }
+        .match-info .meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .8rem;
+            font-size: .8rem;
+            color: var(--text-muted);
+        }
+        .match-info .meta i {
+            color: var(--accent);
+            width: 1.1rem;
+        }
+        .match-info .status-badge {
+            background: var(--accent);
+            color: #000;
+            font-weight: 700;
+            font-size: .65rem;
+            padding: .15rem .7rem;
+            border-radius: 30px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+        }
+        .match-info .status-badge.offline {
+            background: var(--border);
+            color: var(--text-muted);
+        }
+        .match-info .status-badge .pulse {
+            width: 5px;
+            height: 5px;
+            background: #000;
+            border-radius: 50%;
+            animation: blink 1.2s infinite;
+        }
+        .match-info .status-badge.offline .pulse {
+            animation: none;
+            background: var(--text-muted);
+        }
+        @keyframes blink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .2;
+            }
+        }
+
+        /* ── Stream Selector ── */
+        .stream-selector {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.4rem;
+            transition: background var(--transition), border var(--transition);
+        }
+        .stream-selector .stream-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: .6rem;
+            flex-wrap: wrap;
+            gap: .4rem;
+        }
+        .stream-selector .stream-header h4 {
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .stream-selector .stream-header h4 i {
+            color: var(--accent);
+        }
+        .stream-selector .stream-header .count {
+            font-size: .7rem;
+            background: var(--accent-dim);
+            padding: .1rem .6rem;
+            border-radius: 30px;
+            color: var(--text-muted);
+        }
+        .stream-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+        .stream-btn {
+            background: var(--accent-dim);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: .4rem 1rem;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: .75rem;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            white-space: nowrap;
+        }
+        .stream-btn:hover:not(:disabled) {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            transform: scale(1.03);
+        }
+        .stream-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        .stream-btn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .stream-btn .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .stream-btn .status-dot.online {
+            background: var(--accent);
+        }
+        .stream-btn .status-dot.offline {
+            background: var(--red);
+        }
+        .stream-btn .status-dot.unknown {
+            background: var(--yellow);
+        }
+        .stream-btn .badge-label {
+            font-size: .6rem;
+            background: rgba(255, 255, 255, .12);
+            padding: 0 .5rem;
+            border-radius: 20px;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+        .stream-btn.active .badge-label {
+            color: #000;
+            background: rgba(0, 0, 0, .15);
+        }
+        .stream-btn .fav {
+            color: var(--yellow);
+            font-size: .7rem;
+        }
+        .no-streams {
+            color: var(--text-muted);
+            font-size: .85rem;
+            padding: .5rem 0;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* ── Player Controls Bar (custom extras) ── */
+        .player-controls-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .6rem;
+            padding: .4rem 0 .1rem;
+        }
+        .player-controls-bar .ctrl-group {
+            display: flex;
+            align-items: center;
+            gap: .3rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: .1rem .4rem;
+        }
+        .player-controls-bar .ctrl-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: .3rem .5rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: .75rem;
+            font-weight: 600;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: .25rem;
+        }
+        .player-controls-bar .ctrl-btn:hover {
+            color: var(--text);
+            background: var(--accent-dim);
+        }
+        .player-controls-bar .ctrl-btn.active {
+            color: var(--accent);
+        }
+        .player-controls-bar .ctrl-btn i {
+            font-size: .9rem;
+        }
+        .player-controls-bar .speed-label {
+            font-size: .7rem;
+            color: var(--text-muted);
+            min-width: 2.4rem;
+            text-align: center;
+        }
+        .player-controls-bar .sep {
+            color: var(--border);
+            font-size: .8rem;
+        }
+
+        /* ── Footer ── */
+        footer {
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            text-align: center;
+            font-size: .7rem;
+            color: var(--text-muted);
+            transition: background var(--transition), border var(--transition);
+        }
+        footer .disclaimer {
+            max-width: 700px;
+            margin: 0 auto .2rem;
+            opacity: .6;
+        }
+        footer .copy {
+            opacity: .4;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 700px) {
+            .match-info {
+                flex-direction: column;
+                align-items: stretch;
+                padding: .8rem 1rem;
+            }
+            .match-info .teams {
+                justify-content: center;
+            }
+            .match-info .meta {
+                justify-content: center;
+            }
+            .stream-selector {
+                padding: .8rem 1rem;
+            }
+            .stream-grid {
+                justify-content: center;
+            }
+            .logo {
+                font-size: 1.2rem;
+            }
+            .logo small {
+                display: none;
+            }
+            main {
+                padding: .8rem .8rem 1.2rem;
+            }
+            .player-controls-bar {
+                justify-content: center;
+            }
+            .player-controls-bar .ctrl-group {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .live-badge {
+                top: 10px;
+                left: 10px;
+                font-size: .6rem;
+                padding: .1rem .6rem .1rem .5rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .match-info .team img {
+                width: 24px;
+                height: 24px;
+            }
+            .match-info .team .name {
+                font-size: .8rem;
+            }
+            .stream-btn {
+                font-size: .65rem;
+                padding: .3rem .7rem;
+            }
+            .header-content {
+                padding: 0 .2rem;
+            }
+            .back-btn {
+                font-size: .7rem;
+                padding: .25rem .7rem;
+            }
+            .icon-btn {
+                width: 32px;
+                height: 32px;
+                font-size: .85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">
+                FANCOD <span>·</span> RK
+                <small>HLS Player</small>
+            </a>
+            <div class="controls">
+                <button class="back-btn" onclick="window.location.href='index.html'">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button class="icon-btn" id="themeBtn" title="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- Player -->
+        <div class="player-container" id="playerContainer">
+            <video id="videoPlayer" controls autoplay playsinline preload="auto"></video>
+            <div class="player-overlay" id="playerOverlay">
+                <div class="spinner" id="overlaySpinner"></div>
+                <p id="overlayText">Loading stream …</p>
+            </div>
+            <div class="buffering-bar" id="bufferingBar"></div>
+            <div class="live-badge" id="liveBadge">
+                <span class="dot"></span> LIVE
+            </div>
+        </div>
+
+        <!-- Match Info -->
+        <div id="infoArea"></div>
+
+        <!-- Stream Selector -->
+        <div class="stream-selector" id="streamSelector">
+            <div class="stream-header">
+                <h4><i class="fas fa-satellite-dish"></i> Stream Sources</h4>
+                <span class="count" id="streamCount">0 available</span>
+            </div>
+            <div class="stream-grid" id="streamGrid">
+                <div class="no-streams">Loading streams …</div>
+            </div>
+        </div>
+
+        <!-- Extra Controls -->
+        <div class="player-controls-bar" id="extraControls">
+            <div class="ctrl-group">
+                <button class="ctrl-btn" id="pipBtn" title="Picture in Picture">
+                    <i class="fas fa-window-restore"></i>
+                </button>
+                <button class="ctrl-btn" id="fullscreenBtn" title="Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <span class="sep">|</span>
+                <button class="ctrl-btn" id="speedDownBtn" title="Slower">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <span class="speed-label" id="speedDisplay">1.0×</span>
+                <button class="ctrl-btn" id="speedUpBtn" title="Faster">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <span class="sep">|</span>
+                <button class="ctrl-btn" id="retryStreamBtn" title="Retry current stream">
+                    <i class="fas fa-rotate"></i>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer>
+        <div class="disclaimer">
+            <i class="fas fa-shield-alt"></i> Educational purposes only. We do not host any streams.
+            All streams are fetched from external sources.
+        </div>
+        <div class="copy">&copy; 2025 FANCOD · RK. All rights reserved.</div>
+    </footer>
+
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@0.14.17/dist/hls.min.js">
+    </script>
+
+    <script>
+        /* ============================================================
+           CONFIG
+           ============================================================ */
+        const JSON_URL =
+            'https://raw.githubusercontent.com/doctor-8trange/zyphx8/refs/heads/main/data/fancode.json';
+
+        /* ============================================================
+           DOM REFS
+           ============================================================ */
+        const video = document.getElementById('videoPlayer');
+        const playerContainer = document.getElementById('playerContainer');
+        const overlay = document.getElementById('playerOverlay');
+        const overlaySpinner = document.getElementById('overlaySpinner');
+        const overlayText = document.getElementById('overlayText');
+        const bufferingBar = document.getElementById('bufferingBar');
+        const liveBadge = document.getElementById('liveBadge');
+        const infoArea = document.getElementById('infoArea');
+        const streamGrid = document.getElementById('streamGrid');
+        const streamCount = document.getElementById('streamCount');
+        const themeBtn = document.getElementById('themeBtn');
+        const pipBtn = document.getElementById('pipBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const speedDownBtn = document.getElementById('speedDownBtn');
+        const speedUpBtn = document.getElementById('speedUpBtn');
+        const speedDisplay = document.getElementById('speedDisplay');
+        const retryBtn = document.getElementById('retryStreamBtn');
+
+        /* ============================================================
+           STATE
+           ============================================================ */
+        let hls = null;
+        let allStreams = []; // [{ url, label, path, status }]
+        let currentStreamUrl = null;
+        let currentStreamLabel = 'Primary';
+        let isLive = false;
+        let isPlaying = false;
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
+        let speed = 1.0;
+        let isFullscreen = false;
+        let isPiP = false;
+        let overlayVisible = false;
+        let bufferingTimeout = null;
+
+        /* ============================================================
+           THEME
+           ============================================================ */
+        (function initTheme() {
+            const stored = localStorage.getItem('fc-theme');
+            const prefers = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            const theme = stored || prefers;
+            document.documentElement.setAttribute('data-theme', theme);
+            updateThemeIcon(theme);
+        })();
+
+        function updateThemeIcon(theme) {
+            const icon = themeBtn.querySelector('i');
+            icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+
+        themeBtn.addEventListener('click', () => {
+            const cur = document.documentElement.getAttribute('data-theme');
+            const next = cur === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('fc-theme', next);
+            updateThemeIcon(next);
+        });
+
+        /* ============================================================
+           HELPERS
+           ============================================================ */
+        function safe(str) {
+            if (!str && str !== 0) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+            return String(str).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function getVal(obj, path, fallback) {
+            try {
+                const parts = path.split('.');
+                let cur = obj;
+                for (const p of parts) {
+                    if (cur === null || cur === undefined) return fallback;
+                    cur = cur[p];
+                }
+                return (cur === null || cur === undefined) ? fallback : cur;
+            } catch (_) { return fallback; }
+        }
+
+        function isLiveStatus(status) {
+            if (!status) return false;
+            const s = String(status).toUpperCase();
+            return s === 'LIVE' || s === 'STARTED';
+        }
+
+        function isValidUrl(str) {
+            try {
+                const url = new URL(str);
+                return url.protocol === 'http:' || url.protocol === 'https:';
+            } catch (_) { return false; }
+        }
+
+        function isM3u8(str) {
+            if (!str || typeof str !== 'string') return false;
+            return str.toLowerCase().includes('.m3u8');
+        }
+
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        /* ============================================================
+           RECURSIVE STREAM EXTRACTION
+           ============================================================ */
+        function extractStreams(obj, path = '', visited = new Set()) {
+            const results = [];
+
+            if (!obj || typeof obj !== 'object') return results;
+
+            // Avoid circular references
+            if (typeof obj === 'object' && obj !== null) {
+                const ref = obj;
+                if (visited.has(ref)) return results;
+                visited.add(ref);
+            }
+
+            // If it's a string that looks like an m3u8 URL
+            if (typeof obj === 'string' && isM3u8(obj) && isValidUrl(obj)) {
+                results.push({ url: obj, path: path, raw: obj });
+                return results;
+            }
+
+            // If it's an array, recurse
+            if (Array.isArray(obj)) {
+                for (let i = 0; i < obj.length; i++) {
+                    const sub = extractStreams(obj[i], `${path}[${i}]`, visited);
+                    results.push(...sub);
+                }
+                return results;
+            }
+
+            // If it's an object, recurse into all enumerable properties
+            if (typeof obj === 'object' && obj !== null) {
+                for (const [key, value] of Object.entries(obj)) {
+                    // Skip non-URL-like keys for efficiency, but still scan deeper
+                    const sub = extractStreams(value, `${path}.${key}`, visited);
+                    results.push(...sub);
+                }
+            }
+
+            return results;
+        }
+
+        /* ============================================================
+           DEDUPLICATE & LABEL STREAMS
+           ============================================================ */
+        function deduplicateStreams(rawStreams) {
+            const seen = new Map();
+            const unique = [];
+
+            for (const s of rawStreams) {
+                const url = s.url;
+                if (seen.has(url)) continue;
+                seen.set(url, true);
+
+                // Generate a readable label from the path
+                let label = 'Stream';
+                const pathParts = s.path.split('.').filter(p => p && !p.match(/^\[\d+\]$/));
+                const lastPart = pathParts[pathParts.length - 1] || '';
+                // Clean up the label
+                const clean = lastPart
+                    .replace(/^_+/, '')
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, c => c.toUpperCase())
+                    .trim();
+                if (clean && clean.length < 30) {
+                    label = clean;
+                } else {
+                    // Try to find a meaningful name from the URL
+                    const urlObj = new URL(url);
+                    const host = urlObj.hostname.replace(/^www\./, '').split('.')[0];
+                    const pathName = urlObj.pathname.split('/').filter(Boolean).pop() || '';
+                    if (host) label = host.charAt(0).toUpperCase() + host.slice(1);
+                    if (pathName && pathName.includes('index')) label += ' · Main';
+                }
+
+                unique.push({ url, label, path: s.path, status: 'unknown' });
+            }
+
+            return unique;
+        }
+
+        /* ============================================================
+           HEALTH CHECK
+           ============================================================ */
+        async function checkStreamHealth(url, timeout = 6000) {
+            try {
+                const controller = new AbortController();
+                const tid = setTimeout(() => controller.abort(), timeout);
+                const resp = await fetch(url, {
+                    method: 'HEAD',
+                    signal: controller.signal,
+                    mode: 'cors',
+                    cache: 'no-store',
+                });
+                clearTimeout(tid);
+                if (resp.ok) return 'online';
+                // If status is 403 or 404, likely offline
+                if (resp.status === 403 || resp.status === 404) return 'offline';
+                // Other status: uncertain
+                return 'unknown';
+            } catch (err) {
+                // Network error or CORS — we'll still try to play it
+                return 'unknown';
+            }
+        }
+
+        /* ============================================================
+           LOAD MATCH
+           ============================================================ */
+        function getMatchId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        async function loadMatch() {
+            const matchId = getMatchId();
+            if (!matchId) {
+                showError('No match ID provided.');
+                return;
+            }
+
+            try {
+                const resp = await fetch(JSON_URL);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const json = await resp.json();
+                const matches = json?.matches;
+                if (!Array.isArray(matches)) throw new Error('Invalid data format');
+
+                const match = matches.find(m => String(getVal(m, 'match_id', '')) === matchId);
+                if (!match) throw new Error('Match not found.');
+
+                renderMatch(match);
+
+            } catch (err) {
+                console.error('Load error:', err);
+                showError(err.message);
+            }
+        }
+
+        /* ============================================================
+           RENDER MATCH
+           ============================================================ */
+        function renderMatch(match) {
+            const status = getVal(match, 'status', '');
+            isLive = isLiveStatus(status);
+            const tournament = getVal(match, 'tournament', '');
+            const category = getVal(match, 'category', '');
+
+            // Teams
+            const t1 = getVal(match, 'team.0', {});
+            const t2 = getVal(match, 'team.1', {});
+            const t1Name = getVal(t1, 'name', getVal(t1, 'shortName', 'Team 1'));
+            const t2Name = getVal(t2, 'name', getVal(t2, 'shortName', 'Team 2'));
+            const t1Logo = getVal(t1, 'flag.src', '');
+            const t2Logo = getVal(t2, 'flag.src', '');
+
+            // --- Extract ALL streams recursively ---
+            const raw = extractStreams(match);
+            const unique = deduplicateStreams(raw);
+
+            // If no streams found, try some common paths directly
+            if (unique.length === 0) {
+                // Fallback: check common paths
+                const fallbackPaths = [
+                    'STREAMING_CDN.Primary_Playback_URL',
+                    'STREAMING_CDN.Playback_URL',
+                    'STREAMING_CDN.stream_urls',
+                    'playbackUrl',
+                    'streamUrl',
+                    'sources',
+                    'urls',
+                ];
+                for (const p of fallbackPaths) {
+                    const val = getVal(match, p, null);
+                    if (val && typeof val === 'string' && isM3u8(val) && isValidUrl(val)) {
+                        unique.push({ url: val, label: p.split('.').pop(), path: p, status: 'unknown' });
+                    } else if (val && typeof val === 'object') {
+                        const sub = extractStreams(val, p);
+                        const subUnique = deduplicateStreams(sub);
+                        unique.push(...subUnique);
+                    }
+                }
+            }
+
+            // Deduplicate again after fallback
+            const seenUrls = new Set();
+            const finalStreams = [];
+            for (const s of unique) {
+                if (!seenUrls.has(s.url)) {
+                    seenUrls.add(s.url);
+                    finalStreams.push(s);
+                }
+            }
+
+            allStreams = finalStreams;
+
+            // --- Build Info HTML ---
+            const statusHtml = isLive ?
+                `<span class="status-badge"><span class="pulse"></span> LIVE</span>` :
+                `<span class="status-badge offline">${safe(status) || 'Upcoming'}</span>`;
+
+            let infoHtml = `
+                <div class="match-info">
+                    <div class="teams">
+                        <div class="team">
+                            ${t1Logo ? `<img src="${safe(t1Logo)}" alt="${safe(t1Name)}" onerror="this.style.display='none'">` : ''}
+                            <span class="name">${safe(t1Name)}</span>
+                        </div>
+                        <span class="vs">VS</span>
+                        <div class="team">
+                            ${t2Logo ? `<img src="${safe(t2Logo)}" alt="${safe(t2Name)}" onerror="this.style.display='none'">` : ''}
+                            <span class="name">${safe(t2Name)}</span>
+                        </div>
+                    </div>
+                    <div class="meta">
+                        ${tournament ? `<span><i class="fas fa-trophy"></i> ${safe(tournament)}</span>` : ''}
+                        ${category ? `<span><i class="fas fa-tag"></i> ${safe(category)}</span>` : ''}
+                        ${statusHtml}
+                    </div>
+                </div>
+            `;
+            infoArea.innerHTML = infoHtml;
+
+            // --- Update Live Badge ---
+            if (isLive) {
+                liveBadge.classList.add('visible');
+            } else {
+                liveBadge.classList.remove('visible');
+            }
+
+            // --- Render stream buttons ---
+            renderStreamButtons(allStreams);
+
+            // --- Health check & auto-play ---
+            if (allStreams.length === 0) {
+                showError('No streams found for this match.');
+                return;
+            }
+
+            // Start health checks and auto-select
+            startHealthChecksAndPlay(allStreams);
+        }
+
+        /* ============================================================
+           RENDER STREAM BUTTONS
+           ============================================================ */
+        function renderStreamButtons(streams) {
+            if (!streams || streams.length === 0) {
+                streamGrid.innerHTML = `<div class="no-streams">No streams available</div>`;
+                streamCount.textContent = '0 available';
+                return;
+            }
+
+            streamCount.textContent = `${streams.length} available`;
+
+            let html = '';
+            for (let i = 0; i < streams.length; i++) {
+                const s = streams[i];
+                const statusClass = s.status || 'unknown';
+                const isActive = (currentStreamUrl === s.url);
+                const label = s.label || `Stream ${i + 1}`;
+                const shortLabel = label.length > 18 ? label.slice(0, 16) + '…' : label;
+
+                let statusDot = `<span class="status-dot ${statusClass}"></span>`;
+                let badge = '';
+                if (i === 0 && statusClass !== 'offline') {
+                    badge = `<span class="badge-label">primary</span>`;
+                }
+                if (statusClass === 'offline') {
+                    badge = `<span class="badge-label" style="color:var(--red);">offline</span>`;
+                }
+
+                html += `
+                    <button class="stream-btn ${isActive ? 'active' : ''}" 
+                            data-url="${safe(s.url)}" 
+                            data-label="${safe(label)}"
+                            data-index="${i}"
+                            ${statusClass === 'offline' ? 'disabled' : ''}>
+                        ${statusDot}
+                        ${safe(shortLabel)}
+                        ${badge}
+                        ${isActive ? '<i class="fas fa-check" style="font-size:.6rem;margin-left:.1rem;"></i>' : ''}
+                    </button>
+                `;
+            }
+            streamGrid.innerHTML = html;
+
+            // Attach click events
+            document.querySelectorAll('.stream-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const url = this.dataset.url;
+                    const label = this.dataset.label || 'Stream';
+                    if (!url) return;
+                    if (this.disabled) return;
+                    switchStream(url, label);
+                });
+            });
+        }
+
+        /* ============================================================
+           HEALTH CHECKS & AUTO-PLAY
+           ============================================================ */
+        async function startHealthChecksAndPlay(streams) {
+            // Show loading overlay
+            showOverlay(true, 'Checking streams …');
+
+            // Check health of all streams in parallel (with a limit)
+            const batchSize = 6;
+            const results = [];
+
+            for (let i = 0; i < streams.length; i += batchSize) {
+                const batch = streams.slice(i, i + batchSize);
+                const checks = batch.map(async (s) => {
+                    const status = await checkStreamHealth(s.url);
+                    s.status = status;
+                    return { index: i + batch.indexOf(s), status };
+                });
+                const batchResults = await Promise.all(checks);
+                results.push(...batchResults);
+            }
+
+            // Update UI with statuses
+            for (const r of results) {
+                if (r.index < streams.length) {
+                    streams[r.index].status = r.status;
+                }
+            }
+
+            // Re-render buttons with health status
+            renderStreamButtons(streams);
+
+            // Find first online stream
+            const online = streams.find(s => s.status === 'online');
+            const unknown = streams.find(s => s.status === 'unknown');
+            const fallback = streams[0];
+
+            let chosen = online || unknown || fallback;
+
+            if (chosen) {
+                // If the chosen is offline or unknown but we have no better option, try it anyway
+                if (chosen.status === 'offline' && streams.some(s => s.status !== 'offline')) {
+                    // Try to find any non-offline
+                    const anyNonOffline = streams.find(s => s.status !== 'offline');
+                    if (anyNonOffline) chosen = anyNonOffline;
+                }
+                await switchStream(chosen.url, chosen.label || 'Primary');
+            } else {
+                showError('No working streams available.');
+            }
+        }
+
+        /* ============================================================
+           SWITCH STREAM
+           ============================================================ */
+        async function switchStream(url, label) {
+            if (!url) return;
+            if (currentStreamUrl === url && hls && hls.media) {
+                // Already playing this stream
+                return;
+            }
+
+            currentStreamUrl = url;
+            currentStreamLabel = label || 'Stream';
+            retryCount = 0;
+
+            showOverlay(true, 'Loading stream …');
+
+            // Destroy previous HLS instance
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+
+            // Update active button
+            document.querySelectorAll('.stream-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.url === url);
+            });
+
+            // Check if native HLS support (Safari)
+            if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Native HLS
+                video.src = url;
+                video.load();
+                try {
+                    await video.play();
+                    hideOverlay();
+                    isPlaying = true;
+                } catch (err) {
+                    console.warn('Native play failed:', err);
+                    // Fallback to hls.js
+                    initHls(url);
+                }
+                return;
+            }
+
+            // Use hls.js
+            initHls(url);
+        }
+
+        /* ============================================================
+           INIT HLS.JS
+           ============================================================ */
+        function initHls(url) {
+            if (!Hls.isSupported()) {
+                showError('HLS is not supported in this browser.');
+                return;
+            }
+
+            try {
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backbufferLength: 30,
+                    maxBufferLength: 30,
+                    maxMaxBufferLength: 600,
+                    enableWebVTT: true,
+                    manifestLoadingTimeOut: 15000,
+                    manifestLoadingMaxRetry: 3,
+                    manifestLoadingRetryDelay: 1000,
+                    levelLoadingTimeOut: 10000,
+                    levelLoadingMaxRetry: 3,
+                    levelLoadingRetryDelay: 1000,
+                    fragLoadingTimeOut: 15000,
+                    fragLoadingMaxRetry: 3,
+                    fragLoadingRetryDelay: 1000,
+                    xhrSetup: function(xhr, reqUrl) {
+                        // No proxy — direct access
+                        xhr.withCredentials = false;
+                    },
+                });
+
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+                    hls.loadSource(url);
+                });
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    hideOverlay();
+                    isPlaying = true;
+                    retryCount = 0;
+                    // Auto-play
+                    video.play().catch(() => {});
+                    // Update live badge
+                    if (isLive) liveBadge.classList.add('visible');
+                });
+
+                hls.on(Hls.Events.LEVEL_LOADED, () => {
+                    hideOverlay();
+                });
+
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    handleHlsError(data);
+                });
+
+                hls.on(Hls.Events.FRAG_BUFFERING, () => {
+                    showBuffering(true);
+                });
+
+                hls.on(Hls.Events.FRAG_LOADED, () => {
+                    showBuffering(false);
+                });
+
+                hls.on(Hls.Events.BUFFER_APPENDED, () => {
+                    showBuffering(false);
+                });
+
+            } catch (err) {
+                console.error('HLS init error:', err);
+                showError('Failed to initialize HLS player.');
+            }
+        }
+
+        /* ============================================================
+           HLS ERROR HANDLING
+           ============================================================ */
+        function handleHlsError(data) {
+            console.warn('HLS error:', data);
+
+            if (data.fatal) {
+                switch (data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                        // Network error — try to recover
+                        if (retryCount < MAX_RETRIES) {
+                            retryCount++;
+                            const delay = 2000 * retryCount;
+                            showOverlay(true, `Network error. Retrying (${retryCount}/${MAX_RETRIES}) …`);
+                            setTimeout(() => {
+                                if (hls) {
+                                    hls.recoverMediaError();
+                                    hls.loadSource(currentStreamUrl);
+                                }
+                            }, delay);
+                        } else {
+                            // Try backup stream
+                            tryBackupStream();
+                        }
+                        break;
+
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                        if (retryCount < MAX_RETRIES) {
+                            retryCount++;
+                            showOverlay(true, `Media error. Recovering (${retryCount}/${MAX_RETRIES}) …`);
+                            setTimeout(() => {
+                                if (hls) {
+                                    hls.recoverMediaError();
+                                }
+                            }, 1500);
+                        } else {
+                            tryBackupStream();
+                        }
+                        break;
+
+                    case Hls.ErrorTypes.OTHER_ERROR:
+                    default:
+                        showOverlay(true, 'Playback error. Trying backup …');
+                        setTimeout(() => tryBackupStream(), 2000);
+                        break;
+                }
+            } else {
+                // Non-fatal
+                if (data.details === 'manifestIncompatibleCodecsError') {
+                    // Try fallback
+                    tryBackupStream();
+                }
+            }
+        }
+
+        /* ============================================================
+           BACKUP STREAM SWITCHING
+           ============================================================ */
+        function tryBackupStream() {
+            // Find the next available stream
+            const currentIdx = allStreams.findIndex(s => s.url === currentStreamUrl);
+            if (currentIdx === -1) {
+                showError('No backup streams available.');
+                return;
+            }
+
+            // Try next stream
+            for (let i = currentIdx + 1; i < allStreams.length; i++) {
+                const next = allStreams[i];
+                if (next.status !== 'offline') {
+                    showOverlay(true, `Switching to backup: ${next.label} …`);
+                    switchStream(next.url, next.label);
+                    return;
+                }
+            }
+
+            // Try from beginning
+            for (let i = 0; i < currentIdx; i++) {
+                const next = allStreams[i];
+                if (next.status !== 'offline') {
+                    showOverlay(true, `Switching to backup: ${next.label} …`);
+                    switchStream(next.url, next.label);
+                    return;
+                }
+            }
+
+            showError('All streams are offline. Please try again later.');
+        }
+
+        /* ============================================================
+           OVERLAY & BUFFERING
+           ============================================================ */
+        function showOverlay(show, text) {
+            overlayVisible = show;
+            if (show) {
+                overlay.classList.add('visible');
+                overlaySpinner.style.display = 'block';
+                overlayText.textContent = text || 'Loading …';
+                // Remove any error icon
+                const errIcon = overlay.querySelector('.error-icon');
+                if (errIcon) errIcon.remove();
+                const retryBtnEl = overlay.querySelector('.retry-btn');
+                if (retryBtnEl) retryBtnEl.remove();
+            } else {
+                overlay.classList.remove('visible');
+            }
+        }
+
+        function hideOverlay() {
+            showOverlay(false);
+        }
+
+        function showError(msg) {
+            overlay.classList.add('visible');
+            overlaySpinner.style.display = 'none';
+            overlayText.textContent = msg || 'An error occurred.';
+            // Remove existing error icon and retry button
+            const oldIcon = overlay.querySelector('.error-icon');
+            if (oldIcon) oldIcon.remove();
+            const oldBtn = overlay.querySelector('.retry-btn');
+            if (oldBtn) oldBtn.remove();
+            // Add error icon
+            const icon = document.createElement('div');
+            icon.className = 'error-icon';
+            icon.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+            overlay.prepend(icon);
+            // Add retry button
+            const btn = document.createElement('button');
+            btn.className = 'retry-btn';
+            btn.textContent = 'Retry';
+            btn.onclick = () => {
+                if (currentStreamUrl) {
+                    switchStream(currentStreamUrl, currentStreamLabel);
+                } else if (allStreams.length > 0) {
+                    switchStream(allStreams[0].url, allStreams[0].label);
+                } else {
+                    loadMatch();
+                }
+            };
+            overlay.appendChild(btn);
+        }
+
+        function showBuffering(active) {
+            if (active) {
+                bufferingBar.classList.add('active');
+                clearTimeout(bufferingTimeout);
+            } else {
+                // Delay hiding to avoid flicker
+                clearTimeout(bufferingTimeout);
+                bufferingTimeout = setTimeout(() => {
+                    bufferingBar.classList.remove('active');
+                }, 300);
+            }
+        }
+
+        /* ============================================================
+           SPEED CONTROLS
+           ============================================================ */
+        function updateSpeed() {
+            speed = Math.min(Math.max(speed, 0.25), 4.0);
+            video.playbackRate = speed;
+            speedDisplay.textContent = speed.toFixed(1) + '×';
+        }
+
+        speedDownBtn.addEventListener('click', () => {
+            speed = Math.max(0.25, speed - 0.25);
+            updateSpeed();
+        });
+
+        speedUpBtn.addEventListener('click', () => {
+            speed = Math.min(4.0, speed + 0.25);
+            updateSpeed();
+        });
+
+        /* ============================================================
+           FULLSCREEN
+           ============================================================ */
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                playerContainer.requestFullscreen?.() || playerContainer.webkitRequestFullscreen?.();
+            } else {
+                document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+            }
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            isFullscreen = !!document.fullscreenElement;
+            fullscreenBtn.innerHTML = isFullscreen ?
+                '<i class="fas fa-compress"></i>' :
+                '<i class="fas fa-expand"></i>';
+        });
+
+        /* ============================================================
+           PICTURE IN PICTURE
+           ============================================================ */
+        pipBtn.addEventListener('click', () => {
+            if (document.pictureInPictureElement) {
+                document.exitPictureInPicture();
+            } else if (video) {
+                video.requestPictureInPicture?.();
+            }
+        });
+
+        video.addEventListener('enterpictureinpicture', () => {
+            isPiP = true;
+            pipBtn.innerHTML = '<i class="fas fa-window-restore" style="color:var(--accent);"></i>';
+        });
+
+        video.addEventListener('leavepictureinpicture', () => {
+            isPiP = false;
+            pipBtn.innerHTML = '<i class="fas fa-window-restore"></i>';
+        });
+
+        /* ============================================================
+           RETRY BUTTON
+           ============================================================ */
+        retryBtn.addEventListener('click', () => {
+            if (currentStreamUrl) {
+                showOverlay(true, 'Retrying …');
+                switchStream(currentStreamUrl, currentStreamLabel);
+            } else if (allStreams.length > 0) {
+                switchStream(allStreams[0].url, allStreams[0].label);
+            } else {
+                loadMatch();
+            }
+        });
+
+        /* ============================================================
+           VIDEO EVENT HANDLING
+           ============================================================ */
+        video.addEventListener('waiting', () => {
+            showBuffering(true);
+        });
+
+        video.addEventListener('playing', () => {
+            showBuffering(false);
+            hideOverlay();
+            isPlaying = true;
+        });
+
+        video.addEventListener('stalled', () => {
+            showBuffering(true);
+        });
+
+        video.addEventListener('error', (e) => {
+            console.warn('Video error:', e);
+            // If hls.js is handling it, ignore
+            if (hls) return;
+            showError('Video playback error.');
+        });
+
+        /* ============================================================
+           KEYBOARD SHORTCUTS
+           ============================================================ */
+        document.addEventListener('keydown', (e) => {
+            // Space: toggle play
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (video.paused) video.play(); else video.pause();
+            }
+            // F: fullscreen
+            if (e.key === 'f' || e.key === 'F') {
+                fullscreenBtn.click();
+            }
+            // Arrow keys: seek
+            if (e.key === 'ArrowRight') {
+                video.currentTime = Math.min(video.duration, video.currentTime + 10);
+            }
+            if (e.key === 'ArrowLeft') {
+                video.currentTime = Math.max(0, video.currentTime - 10);
+            }
+        });
+
+        /* ============================================================
+           BOOT
+           ============================================================ */
+        loadMatch();
+
+        // Expose for debugging
+        window.__player = { video, hls, allStreams, switchStream, loadMatch };
+    </script>
+</body>
+</html>
