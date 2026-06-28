@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FANCOD · RK — Stream</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <!-- HLS.js (silent primary engine) -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@0.14.17/dist/hls.min.js">
+    </script>
+    <style>
+        /* ── Reset & Retro Dark Theme ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --bg: #0a0a0a;
+            --card: #121212;
+            --text: #e6e6e6;
+            --text-muted: #7a7a7a;
+            --border: #232323;
+            --accent: #00d2ff;
+            --accent-dim: rgba(0, 210, 255, .10);
+            --accent-glow: rgba(0, 210, 255, .20);
+            --radius: 6px;
+            --shadow: 0 4px 16px rgba(0, 0, 0, .8);
+        }
+        [data-theme="light"] {
+            --bg: #ececec;
+            --card: #ffffff;
+            --text: #121212;
+            --text-muted: #5a5a5a;
+            --border: #ccc;
+            --accent: #0088cc;
+            --accent-dim: rgba(0, 136, 204, .08);
+            --accent-glow: rgba(0, 136, 204, .15);
+            --shadow: 0 4px 16px rgba(0, 0, 0, .06);
+        }
+        html,
+        body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        /* ── Header ── */
+        header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 0.6rem 1.2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .logo span {
+            color: var(--accent);
+        }
+        .logo small {
+            font-size: 0.65rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .back-btn,
+        .icon-btn {
+            background: var(--accent-dim);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.3rem 0.8rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background .15s, color .15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: inherit;
+        }
+        .back-btn:hover,
+        .icon-btn:hover {
+            background: var(--accent);
+            color: #000;
+        }
+        .icon-btn {
+            width: 34px;
+            height: 34px;
+            justify-content: center;
+            padding: 0;
+            border-radius: 50%;
+        }
+
+        /* ── Main ── */
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* ── Player ── */
+        .player-container {
+            position: relative;
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            aspect-ratio: 16/9;
+            overflow: hidden;
+        }
+        .player-container video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #000;
+        }
+
+        /* ── Overlay ── */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, .8);
+            backdrop-filter: blur(4px);
+            gap: 0.8rem;
+            z-index: 5;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .3s;
+        }
+        .overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .overlay .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .overlay p {
+            color: #fff;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .overlay .error-icon {
+            font-size: 2rem;
+            color: #ff4444;
+        }
+        .overlay .retry-btn {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0.4rem 1.6rem;
+            border-radius: var(--radius);
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .overlay .retry-btn:hover {
+            transform: scale(1.03);
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Quality Selector ── */
+        .quality-selector {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0.6rem 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .quality-selector .label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .quality-selector .label i {
+            color: var(--accent);
+        }
+        .quality-group {
+            display: flex;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+        }
+        .quality-btn {
+            background: var(--accent-dim);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.25rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all .15s;
+            font-family: inherit;
+        }
+        .quality-btn:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+        .quality-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+        .quality-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .no-streams {
+            color: var(--text-muted);
+            padding: 0.3rem 0;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* ── Match Info ── */
+        .match-info {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0.6rem 1.2rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+        }
+        .match-info .teams {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .match-info .team {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .match-info .team img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: var(--bg);
+            padding: 2px;
+        }
+        .match-info .team .name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .match-info .vs {
+            font-weight: 800;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+        .match-info .meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .match-info .meta i {
+            color: var(--accent);
+            width: 1.1rem;
+        }
+        .match-info .status-badge {
+            background: var(--accent);
+            color: #000;
+            font-weight: 700;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.6rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .match-info .status-badge.offline {
+            background: var(--border);
+            color: var(--text-muted);
+        }
+        .match-info .status-badge .pulse {
+            width: 5px;
+            height: 5px;
+            background: #000;
+            border-radius: 50%;
+            animation: blink 1.2s infinite;
+        }
+        .match-info .status-badge.offline .pulse {
+            animation: none;
+            background: var(--text-muted);
+        }
+        @keyframes blink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .2;
+            }
+        }
+
+        /* ── Footer ── */
+        footer {
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 0.8rem 1.2rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        footer .disclaimer {
+            max-width: 700px;
+            margin: 0 auto 0.1rem;
+            opacity: 0.6;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width:640px) {
+            .match-info {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .match-info .teams {
+                justify-content: center;
+            }
+            .match-info .meta {
+                justify-content: center;
+            }
+            .quality-selector {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.4rem;
+            }
+            .quality-group {
+                justify-content: center;
+            }
+            .logo {
+                font-size: 1.2rem;
+            }
+            .logo small {
+                display: none;
+            }
+            main {
+                padding: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">FANCOD <span>·</span> RK <small>Stream</small></a>
+            <div class="controls">
+                <button class="back-btn" onclick="window.location.href='index.html'">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <button class="icon-btn" id="themeBtn" title="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Player -->
+        <div class="player-container" id="playerContainer">
+            <video id="videoPlayer" controls autoplay playsinline preload="auto"></video>
+            <div class="overlay" id="playerOverlay">
+                <div class="spinner" id="overlaySpinner"></div>
+                <p id="overlayText">Loading stream …</p>
+            </div>
+        </div>
+
+        <!-- Quality Selector -->
+        <div class="quality-selector" id="qualitySelector">
+            <span class="label"><i class="fas fa-sliders-h"></i> Quality</span>
+            <div class="quality-group" id="qualityGroup">
+                <div class="no-streams">No streams available</div>
+            </div>
+        </div>
+
+        <!-- Match Info -->
+        <div id="infoArea"></div>
+    </main>
+
+    <footer>
+        <div class="disclaimer"><i class="fas fa-shield-alt"></i> Educational only. We do not host streams.</div>
+    </footer>
+
+    <script>
+        /* ============================================================
+           CONFIG
+           ============================================================ */
+        const JSON_URL = 'https://raw.githubusercontent.com/doctor-8trange/zyphx8/refs/heads/main/data/fancode.json';
+
+        /* ============================================================
+           DOM REFS
+           ============================================================ */
+        const video = document.getElementById('videoPlayer');
+        const overlay = document.getElementById('playerOverlay');
+        const overlaySpinner = document.getElementById('overlaySpinner');
+        const overlayText = document.getElementById('overlayText');
+        const infoArea = document.getElementById('infoArea');
+        const qualityGroup = document.getElementById('qualityGroup');
+        const themeBtn = document.getElementById('themeBtn');
+
+        /* ============================================================
+           THEME
+           ============================================================ */
+        (function initTheme() {
+            const stored = localStorage.getItem('fc-theme');
+            const prefers = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            const theme = stored || prefers;
+            document.documentElement.setAttribute('data-theme', theme);
+            updateThemeIcon(theme);
+        })();
+
+        function updateThemeIcon(theme) {
+            const icon = themeBtn.querySelector('i');
+            icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+
+        themeBtn.addEventListener('click', () => {
+            const cur = document.documentElement.getAttribute('data-theme');
+            const next = cur === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('fc-theme', next);
+            updateThemeIcon(next);
+        });
+
+        /* ============================================================
+           HELPERS
+           ============================================================ */
+        function safe(str) {
+            if (!str && str !== 0) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+            return String(str).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function getVal(obj, path, fallback) {
+            try {
+                const parts = path.split('.');
+                let cur = obj;
+                for (const p of parts) {
+                    if (cur === null || cur === undefined) return fallback;
+                    cur = cur[p];
+                }
+                return (cur === null || cur === undefined) ? fallback : cur;
+            } catch (_) { return fallback; }
+        }
+
+        function isLiveStatus(status) {
+            if (!status) return false;
+            const s = String(status).toUpperCase();
+            return s === 'LIVE' || s === 'STARTED';
+        }
+
+        /* ============================================================
+           STATE
+           ============================================================ */
+        let hlsInstance = null;
+        let currentUrl = null;
+        let match = null;
+        let qualityMap = {}; // label -> url (with token already)
+
+        /* ============================================================
+           OVERLAY
+           ============================================================ */
+        function showOverlay(show, text) {
+            if (show) {
+                overlay.classList.add('visible');
+                overlaySpinner.style.display = 'block';
+                overlayText.textContent = text || 'Loading …';
+                const errIcon = overlay.querySelector('.error-icon');
+                if (errIcon) errIcon.remove();
+                const retryBtn = overlay.querySelector('.retry-btn');
+                if (retryBtn) retryBtn.remove();
+            } else {
+                overlay.classList.remove('visible');
+            }
+        }
+
+        function hideOverlay() { showOverlay(false); }
+
+        function showError(msg) {
+            overlay.classList.add('visible');
+            overlaySpinner.style.display = 'none';
+            overlayText.textContent = msg || 'Error';
+            const oldIcon = overlay.querySelector('.error-icon');
+            if (oldIcon) oldIcon.remove();
+            const oldBtn = overlay.querySelector('.retry-btn');
+            if (oldBtn) oldBtn.remove();
+            const icon = document.createElement('div');
+            icon.className = 'error-icon';
+            icon.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+            overlay.prepend(icon);
+            const btn = document.createElement('button');
+            btn.className = 'retry-btn';
+            btn.textContent = 'Retry';
+            btn.onclick = () => {
+                if (currentUrl) {
+                    loadStream(currentUrl);
+                } else if (match) {
+                    // re-parse and load first
+                    const parsed = parseAutoStreams(match);
+                    if (parsed && Object.keys(parsed).length) {
+                        const firstKey = Object.keys(parsed)[0];
+                        loadStream(parsed[firstKey]);
+                    } else {
+                        showError('No streams available.');
+                    }
+                } else {
+                    loadMatch();
+                }
+            };
+            overlay.appendChild(btn);
+        }
+
+        /* ============================================================
+           PLAYER ENGINE (silent primary HLS.js, fallback native)
+           ============================================================ */
+        function loadStream(url) {
+            if (!url) {
+                showError('No stream URL.');
+                return;
+            }
+            currentUrl = url;
+            showOverlay(true, 'Loading stream …');
+
+            // Destroy previous HLS instance
+            try {
+                if (hlsInstance) {
+                    hlsInstance.destroy();
+                    hlsInstance = null;
+                }
+            } catch (_) {}
+
+            // Clear video
+            video.removeAttribute('src');
+            video.load();
+
+            // Attempt HLS.js if supported
+            if (Hls.isSupported()) {
+                const hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backbufferLength: 30,
+                    maxBufferSize: 60 * 1000 * 1000,
+                    maxBufferLength: 30,
+                    liveSyncDurationCount: 3,
+                    liveMaxLatencyDurationCount: 10,
+                    enableWebVTT: true,
+                });
+                hlsInstance = hls;
+
+                hls.loadSource(url);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    hideOverlay();
+                    video.play().catch(() => {});
+                });
+
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        console.error('[HLS.js] Fatal error:', data);
+                        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                            hls.startLoad();
+                            showOverlay(true, 'Network error, retrying …');
+                            setTimeout(() => {
+                                if (hlsInstance) hls.loadSource(url);
+                            }, 2000);
+                            return;
+                        }
+                        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                            hls.recoverMediaError();
+                            return;
+                        }
+                        // Fatal: fallback to native
+                        fallbackToNative(url);
+                    } else {
+                        console.warn('[HLS.js] Non-fatal:', data);
+                    }
+                });
+
+                // If HLS fails to load manifest within 10s, fallback
+                let manifestTimeout = setTimeout(() => {
+                    if (!video.currentTime && !video.readyState && hlsInstance) {
+                        console.warn('HLS.js manifest load timeout, falling back to native');
+                        fallbackToNative(url);
+                    }
+                }, 10000);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    clearTimeout(manifestTimeout);
+                });
+
+            } else {
+                // HLS not supported, use native
+                fallbackToNative(url);
+            }
+        }
+
+        function fallbackToNative(url) {
+            // Destroy HLS
+            try {
+                if (hlsInstance) {
+                    hlsInstance.destroy();
+                    hlsInstance = null;
+                }
+            } catch (_) {}
+
+            video.removeAttribute('src');
+            video.load();
+            video.src = url;
+            video.load();
+
+            const onCanPlay = () => {
+                hideOverlay();
+                video.play().catch(() => {});
+                video.removeEventListener('canplay', onCanPlay);
+            };
+            video.addEventListener('canplay', onCanPlay);
+
+            video.onerror = () => {
+                const error = video.error;
+                let msg = 'Native playback error.';
+                if (error) {
+                    if (error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+                        msg = 'Browser does not support this stream.';
+                    } else if (error.code === MediaError.MEDIA_ERR_NETWORK) {
+                        msg = 'Network error loading stream.';
+                    } else if (error.code === MediaError.MEDIA_ERR_DECODE) {
+                        msg = 'Decode error — stream may be corrupted.';
+                    } else {
+                        msg = error.message || 'Unknown media error.';
+                    }
+                }
+                showError(msg);
+                video.removeEventListener('canplay', onCanPlay);
+            };
+
+            // Timeout: if no canplay after 15s, show error
+            setTimeout(() => {
+                if (!video.currentTime && !video.readyState) {
+                    video.removeEventListener('canplay', onCanPlay);
+                    showError('Native playback timed out.');
+                }
+            }, 15000);
+        }
+
+        /* ============================================================
+           PARSE AUTO_STREAMS – extract resolution -> URL (with token)
+           ============================================================ */
+        function parseAutoStreams(match) {
+            const autoStreams = getVal(match, 'auto_streams', []);
+            if (!Array.isArray(autoStreams) || autoStreams.length === 0) {
+                return null;
+            }
+            const autoText = getVal(autoStreams[0], 'auto', '');
+            if (!autoText) return null;
+
+            const lines = autoText.split('\n');
+            const result = {};
+            let currentResolution = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.startsWith('#EXT-X-STREAM-INF')) {
+                    // Extract RESOLUTION
+                    const matchRes = line.match(/RESOLUTION=(\d+)x(\d+)/);
+                    if (matchRes) {
+                        const height = parseInt(matchRes[2], 10);
+                        currentResolution = height + 'p';
+                    } else {
+                        // fallback: use bandwidth or just "auto"
+                        currentResolution = 'auto';
+                    }
+                    // Look ahead for the URL on the next line(s)
+                    let nextLine = '';
+                    let j = i + 1;
+                    while (j < lines.length) {
+                        const candidate = lines[j].trim();
+                        if (candidate && !candidate.startsWith('#')) {
+                            nextLine = candidate;
+                            break;
+                        }
+                        j++;
+                    }
+                    if (nextLine) {
+                        // The URL already contains the token (hdntl etc.) – use as is
+                        result[currentResolution] = nextLine;
+                        currentResolution = null; // reset
+                    }
+                }
+            }
+
+            // If we found nothing, try to find any .m3u8 line directly (master playlist)
+            if (Object.keys(result).length === 0) {
+                const urlLines = lines.filter(l => l.trim() && !l.startsWith('#') && l.includes('.m3u8'));
+                if (urlLines.length > 0) {
+                    result['auto'] = urlLines[0].trim();
+                }
+            }
+
+            return result;
+        }
+
+        /* ============================================================
+           LOAD MATCH
+           ============================================================ */
+        function getMatchId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        async function loadMatch() {
+            const id = getMatchId();
+            if (!id) {
+                showError('No match ID provided.');
+                return;
+            }
+
+            try {
+                const resp = await fetch(JSON_URL);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const json = await resp.json();
+                const matches = json?.matches;
+                if (!Array.isArray(matches)) throw new Error('Invalid data');
+
+                const found = matches.find(m => String(getVal(m, 'match_id', '')) === id);
+                if (!found) throw new Error('Match not found');
+
+                match = found;
+
+                // Parse auto streams
+                const parsed = parseAutoStreams(found);
+                if (parsed && Object.keys(parsed).length > 0) {
+                    qualityMap = parsed;
+                } else {
+                    throw new Error('No stream sources found in auto_streams.');
+                }
+
+                // Render quality buttons
+                renderQualityButtons();
+
+                // Render match info
+                renderMatchInfo(found);
+
+                // Auto-load first quality
+                const keys = Object.keys(qualityMap);
+                if (keys.length > 0) {
+                    // Sort by resolution (e.g., 1080p > 720p)
+                    keys.sort((a, b) => {
+                        const numA = parseInt(a, 10);
+                        const numB = parseInt(b, 10);
+                        if (!isNaN(numA) && !isNaN(numB)) return numB - numA;
+                        return a.localeCompare(b);
+                    });
+                    const firstUrl = qualityMap[keys[0]];
+                    if (firstUrl) {
+                        loadStream(firstUrl);
+                        // Mark first button as active
+                        const firstBtn = document.querySelector('.quality-btn');
+                        if (firstBtn) firstBtn.classList.add('active');
+                    } else {
+                        showError('No stream URL available.');
+                    }
+                } else {
+                    showError('No quality variants found.');
+                }
+
+            } catch (err) {
+                console.error('Load error:', err);
+                showError(err.message);
+            }
+        }
+
+        /* ============================================================
+           RENDER QUALITY BUTTONS
+           ============================================================ */
+        function renderQualityButtons() {
+            const keys = Object.keys(qualityMap);
+            if (keys.length === 0) {
+                qualityGroup.innerHTML = '<div class="no-streams">No streams available</div>';
+                return;
+            }
+            // Sort descending by resolution
+            keys.sort((a, b) => {
+                const numA = parseInt(a, 10);
+                const numB = parseInt(b, 10);
+                if (!isNaN(numA) && !isNaN(numB)) return numB - numA;
+                return a.localeCompare(b);
+            });
+
+            let html = '';
+            for (const label of keys) {
+                const url = qualityMap[label];
+                html += `<button class="quality-btn" data-url="${safe(url)}">${safe(label)}</button>`;
+            }
+            qualityGroup.innerHTML = html;
+
+            // Attach click events
+            document.querySelectorAll('.quality-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const url = this.dataset.url;
+                    if (url) {
+                        document.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        loadStream(url);
+                    }
+                });
+            });
+        }
+
+        /* ============================================================
+           RENDER MATCH INFO
+           ============================================================ */
+        function renderMatchInfo(match) {
+            const status = getVal(match, 'status', '');
+            const isLive = isLiveStatus(status);
+            const tournament = getVal(match, 'tournament', '');
+            const category = getVal(match, 'category', '');
+
+            const t1 = getVal(match, 'team.0', {});
+            const t2 = getVal(match, 'team.1', {});
+            const t1Name = getVal(t1, 'name', getVal(t1, 'shortName', 'Team 1'));
+            const t2Name = getVal(t2, 'name', getVal(t2, 'shortName', 'Team 2'));
+            const t1Logo = getVal(t1, 'flag.src', '');
+            const t2Logo = getVal(t2, 'flag.src', '');
+
+            const statusHtml = isLive ?
+                `<span class="status-badge"><span class="pulse"></span> LIVE</span>` :
+                `<span class="status-badge offline">${safe(status) || 'Upcoming'}</span>`;
+
+            infoArea.innerHTML = `
+                    <div class="match-info">
+                        <div class="teams">
+                            <div class="team">
+                                ${t1Logo ? `<img src="${safe(t1Logo)}" onerror="this.style.display='none'">` : ''}
+                                <span class="name">${safe(t1Name)}</span>
+                            </div>
+                            <span class="vs">VS</span>
+                            <div class="team">
+                                ${t2Logo ? `<img src="${safe(t2Logo)}" onerror="this.style.display='none'">` : ''}
+                                <span class="name">${safe(t2Name)}</span>
+                            </div>
+                        </div>
+                        <div class="meta">
+                            ${tournament ? `<span><i class="fas fa-trophy"></i> ${safe(tournament)}</span>` : ''}
+                            ${category ? `<span><i class="fas fa-tag"></i> ${safe(category)}</span>` : ''}
+                            ${statusHtml}
+                        </div>
+                    </div>
+                `;
+        }
+
+        /* ============================================================
+           BOOT
+           ============================================================ */
+        loadMatch();
+
+        // Expose for debugging
+        window.__state = { video, hlsInstance, currentUrl, match, qualityMap };
+    </script>
+</body>
+</html>
