@@ -1,0 +1,910 @@
+<!-- ==================== index.html ==================== -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FANCOD · RK</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        /* ── Reset & Root ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            transition: background-color .2s, color .2s, border-color .2s;
+        }
+
+        :root {
+            --bg: #0b0b0b;
+            --card: #121212;
+            --card-hover: #1a1a1a;
+            --text: #e6e6e6;
+            --text-muted: #7a7a7a;
+            --border: #232323;
+            --accent: #00d2ff;
+            --accent-dim: rgba(0, 210, 255, .10);
+            --accent-glow: rgba(0, 210, 255, .20);
+            --shadow: 0 6px 20px rgba(0, 0, 0, .7);
+            --radius: 8px;
+            --transition: .18s ease;
+        }
+
+        [data-theme="light"] {
+            --bg: #ececec;
+            --card: #ffffff;
+            --card-hover: #f4f4f4;
+            --text: #121212;
+            --text-muted: #5a5a5a;
+            --border: #ccc;
+            --accent: #0088cc;
+            --accent-dim: rgba(0, 136, 204, .08);
+            --accent-glow: rgba(0, 136, 204, .15);
+            --shadow: 0 6px 20px rgba(0, 0, 0, .08);
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: .6rem 1.2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(6px);
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: .6rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -.4px;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+        .logo span {
+            color: var(--accent);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .icon-btn {
+            background: var(--accent-dim);
+            border: 1px solid transparent;
+            color: var(--text);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        .icon-btn:hover {
+            background: var(--accent);
+            color: #000;
+            transform: scale(1.04);
+        }
+        .icon-btn:active {
+            transform: scale(.92);
+        }
+        .icon-btn.rotate {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .filter-bar {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: .6rem 1.2rem 0;
+            display: flex;
+            gap: .3rem;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .filter-tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: .5rem 1.2rem;
+            font-weight: 600;
+            font-size: .8rem;
+            cursor: pointer;
+            border-radius: var(--radius) var(--radius) 0 0;
+            transition: var(--transition);
+            font-family: inherit;
+            position: relative;
+            letter-spacing: .02em;
+        }
+        .filter-tab:hover {
+            color: var(--text);
+            background: var(--accent-dim);
+        }
+        .filter-tab.active {
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+        .filter-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            right: 20%;
+            height: 2px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+        .filter-tab .count {
+            display: inline-block;
+            font-size: .65rem;
+            background: var(--border);
+            color: var(--text-muted);
+            padding: 0 .5rem;
+            border-radius: 12px;
+            margin-left: .3rem;
+            font-weight: 700;
+        }
+        .filter-tab.active .count {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        main {
+            flex: 1;
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.2rem 1.2rem 2rem;
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: .6rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: .5rem 1rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .last-updated {
+            font-size: .8rem;
+            color: var(--text-muted);
+        }
+        .last-updated i {
+            margin-right: .4rem;
+        }
+
+        .live-count {
+            background: var(--accent);
+            color: #000;
+            font-weight: 700;
+            font-size: .75rem;
+            padding: .2rem .9rem;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            letter-spacing: .2px;
+        }
+        .live-count .dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            background: #000;
+            border-radius: 50%;
+            animation: blink 1.2s infinite;
+        }
+        @keyframes blink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .2;
+            }
+        }
+
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 1rem;
+        }
+
+        .match-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+        }
+        .match-card:hover {
+            background: var(--card-hover);
+            transform: translateY(-3px);
+            border-color: var(--accent);
+            box-shadow: 0 8px 28px rgba(0, 210, 255, .06);
+        }
+
+        .match-card .thumb {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            background: var(--bg);
+            display: block;
+        }
+
+        .match-card .body {
+            padding: .9rem 1rem 1rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .match-card .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: .4rem;
+            margin-bottom: .4rem;
+        }
+        .match-card .category {
+            font-size: .65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: var(--accent);
+            background: var(--accent-dim);
+            padding: .1rem .6rem;
+            border-radius: 16px;
+            border: 1px solid transparent;
+        }
+        .match-card .status-badge {
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: .3rem;
+            padding: .1rem .6rem;
+            border-radius: 16px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            flex-shrink: 0;
+        }
+        .match-card .status-badge .pulse {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: blink 1.2s infinite;
+            flex-shrink: 0;
+        }
+        .match-card .status-badge.upcoming {
+            color: var(--text-muted);
+            border-color: var(--border);
+            background: transparent;
+        }
+        .match-card .status-badge.upcoming .pulse {
+            background: var(--text-muted);
+            animation: none;
+        }
+        .match-card .status-badge.ended {
+            color: var(--text-muted);
+            border-color: var(--border);
+            background: transparent;
+            opacity: .5;
+        }
+        .match-card .status-badge.ended .pulse {
+            background: var(--text-muted);
+            animation: none;
+            display: none;
+        }
+
+        .match-card .tournament {
+            font-size: .75rem;
+            color: var(--text-muted);
+            margin-bottom: .5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .match-card .tournament i {
+            color: var(--accent);
+            margin-right: .3rem;
+        }
+
+        .match-card .teams {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .4rem;
+            margin: .15rem 0 .6rem;
+        }
+        .match-card .team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: .15rem;
+            flex: 1;
+            text-align: center;
+            min-width: 0;
+        }
+        .match-card .team img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: var(--bg);
+            padding: 3px;
+            flex-shrink: 0;
+        }
+        .match-card .team .name {
+            font-size: .75rem;
+            font-weight: 600;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .match-card .vs {
+            font-size: .7rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            padding: 0 .1rem;
+            flex-shrink: 0;
+        }
+
+        .match-card .watch-btn {
+            margin-top: auto;
+            padding: .5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: .8rem;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--accent);
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            width: 100%;
+        }
+        .match-card .watch-btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 0 24px var(--accent-glow);
+        }
+        .match-card .watch-btn:active:not(:disabled) {
+            transform: scale(.96);
+        }
+        .match-card .watch-btn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+            background: var(--border);
+            color: var(--text-muted);
+        }
+
+        .loading-wrap,
+        .error-wrap {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem 1rem;
+            text-align: center;
+            gap: .8rem;
+        }
+        .spinner {
+            width: 38px;
+            height: 38px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .error-wrap {
+            color: #ff6b6b;
+        }
+        .error-wrap i {
+            font-size: 2rem;
+        }
+
+        footer {
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 1rem 1.2rem;
+            text-align: center;
+            font-size: .7rem;
+            color: var(--text-muted);
+        }
+        footer .disclaimer {
+            max-width: 700px;
+            margin: 0 auto .2rem;
+            opacity: .6;
+        }
+        footer .copy {
+            opacity: .4;
+        }
+
+        @media (max-width: 640px) {
+            .header-content {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .logo {
+                font-size: 1.2rem;
+            }
+            .matches-grid {
+                grid-template-columns: 1fr;
+            }
+            .match-card .team img {
+                width: 34px;
+                height: 34px;
+            }
+            .match-card .team .name {
+                font-size: .68rem;
+            }
+            .info-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: .3rem;
+                padding: .5rem .8rem;
+            }
+            .live-count {
+                align-self: flex-start;
+            }
+            main {
+                padding: .8rem .8rem 1.2rem;
+            }
+            .filter-bar {
+                padding: .4rem .8rem 0;
+                gap: .1rem;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+            .filter-tab {
+                padding: .4rem .8rem;
+                font-size: .7rem;
+                white-space: nowrap;
+            }
+            .filter-tab .count {
+                font-size: .55rem;
+                padding: 0 .35rem;
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 900px) {
+            .matches-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        .text-accent {
+            color: var(--accent);
+        }
+
+        .match-card {
+            transition: opacity .15s ease, transform .15s ease, background .2s, border-color .2s;
+        }
+        .match-card.filtered-out {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">FANCOD <span>·</span> RK</a>
+            <div class="controls">
+                <button class="icon-btn" id="refreshBtn" title="Refresh" aria-label="Refresh matches">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── Filter Tabs ── -->
+    <div class="filter-bar" id="filterBar">
+        <button class="filter-tab active" data-filter="all">All <span class="count" id="countAll">0</span></button>
+        <button class="filter-tab" data-filter="live">Live <span class="count" id="countLive">0</span></button>
+        <button class="filter-tab" data-filter="incoming">Incoming <span class="count" id="countIncoming">0</span></button>
+        <button class="filter-tab" data-filter="ended">Ended <span class="count" id="countEnded">0</span></button>
+    </div>
+
+    <main>
+        <div class="info-bar">
+            <div class="last-updated"><i class="far fa-clock"></i> Updated: <span id="lastUpdated">—</span></div>
+            <div class="live-count"><span class="dot"></span> <span id="liveCount">0</span> LIVE</div>
+        </div>
+
+        <div class="matches-grid" id="matchesGrid">
+            <div class="loading-wrap">
+                <div class="spinner"></div>
+                <p>Loading matches …</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="disclaimer">
+            <i class="fas fa-shield-alt"></i> We do not host any streams.
+            All streams are fetched from external sources.
+        </div>
+        <div class="copy">&copy; 2025 FANCOD · RK</div>
+    </footer>
+
+    <script>
+        /* ============================================================
+           CONFIG
+           ============================================================ */
+        const JSON_URL =
+            'https://raw.githubusercontent.com/doctor-8trange/zyphx8/refs/heads/main/data/fancode.json';
+
+        /* ============================================================
+           DOM REFS
+           ============================================================ */
+        const grid = document.getElementById('matchesGrid');
+        const lastUpdatedEl = document.getElementById('lastUpdated');
+        const liveCountEl = document.getElementById('liveCount');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const themeBtn = document.getElementById('themeBtn');
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        const countAll = document.getElementById('countAll');
+        const countLive = document.getElementById('countLive');
+        const countIncoming = document.getElementById('countIncoming');
+        const countEnded = document.getElementById('countEnded');
+
+        /* ============================================================
+           STATE
+           ============================================================ */
+        let allMatches = [];
+        let activeFilter = 'all';
+
+        /* ============================================================
+           THEME
+           ============================================================ */
+        (function initTheme() {
+            const stored = localStorage.getItem('fc-theme');
+            const prefers = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            const theme = stored || prefers;
+            document.documentElement.setAttribute('data-theme', theme);
+            updateThemeIcon(theme);
+        })();
+
+        function updateThemeIcon(theme) {
+            const icon = themeBtn.querySelector('i');
+            icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+
+        themeBtn.addEventListener('click', () => {
+            const cur = document.documentElement.getAttribute('data-theme');
+            const next = cur === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('fc-theme', next);
+            updateThemeIcon(next);
+        });
+
+        /* ============================================================
+           HELPERS
+           ============================================================ */
+        function safe(str) {
+            if (!str && str !== 0) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+            return String(str).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function getVal(obj, path, fallback) {
+            try {
+                const parts = path.split('.');
+                let cur = obj;
+                for (const p of parts) {
+                    if (cur === null || cur === undefined) return fallback;
+                    cur = cur[p];
+                }
+                return (cur === null || cur === undefined) ? fallback : cur;
+            } catch (_) { return fallback; }
+        }
+
+        function getStatusCategory(status) {
+            if (!status) return 'incoming';
+            const s = String(status).toUpperCase();
+            if (s === 'LIVE' || s === 'STARTED') return 'live';
+            if (s === 'ENDED' || s === 'FINISHED' || s === 'COMPLETED') return 'ended';
+            return 'incoming';
+        }
+
+        function isLive(status) {
+            return getStatusCategory(status) === 'live';
+        }
+
+        /* ============================================================
+           FETCH + RENDER
+           ============================================================ */
+        async function fetchMatches() {
+            const refreshIcon = refreshBtn.querySelector('i');
+            refreshBtn.classList.add('rotate');
+
+            try {
+                const resp = await fetch(JSON_URL);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const json = await resp.json();
+
+                const matches = json?.matches;
+                if (!Array.isArray(matches)) throw new Error('Invalid data: missing matches array');
+
+                allMatches = matches;
+                renderMatches(allMatches);
+                updateInfo(allMatches);
+                updateCounts(allMatches);
+                applyFilter(activeFilter);
+
+            } catch (err) {
+                console.error('Fetch error:', err);
+                grid.innerHTML = `
+                    <div class="error-wrap">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <h3>Failed to load matches</h3>
+                        <p>${safe(err.message)}</p>
+                        <button class="icon-btn" style="border-radius:6px;padding:0 1.2rem;width:auto;gap:.6rem;"
+                                onclick="fetchMatches()">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </div>
+                `;
+            } finally {
+                refreshBtn.classList.remove('rotate');
+                const icon = refreshBtn.querySelector('i');
+                icon.className = 'fas fa-sync-alt';
+            }
+        }
+
+        /* ============================================================
+           RENDER
+           ============================================================ */
+        function renderMatches(matches) {
+            if (!matches.length) {
+                grid.innerHTML = `
+                    <div class="error-wrap" style="color:var(--text-muted)">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No matches available at this time.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            for (const match of matches) {
+                const id = getVal(match, 'match_id', '');
+                const status = getVal(match, 'status', 'NOT_STARTED');
+                const statusCat = getStatusCategory(status);
+                const live = statusCat === 'live';
+                const tournament = getVal(match, 'tournament', '');
+                const category = getVal(match, 'category', '');
+
+                let thumb = getVal(match, 'image_cdn.APP', '');
+                if (!thumb) thumb = getVal(match, 'image_cdn.BG_IMAGE', '');
+                if (!thumb) thumb = getVal(match, 'image', '');
+                if (!thumb) thumb = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"%3E%3Crect fill="%23121212" width="320" height="180"/%3E%3Ctext x="160" y="95" text-anchor="middle" fill="%23333" font-family="sans-serif" font-size="16"%3ENo Image%3C/text%3E%3C/svg%3E';
+
+                const t1 = getVal(match, 'team.0', {});
+                const t2 = getVal(match, 'team.1', {});
+                const t1Name = getVal(t1, 'name', getVal(t1, 'shortName', 'Team 1'));
+                const t2Name = getVal(t2, 'name', getVal(t2, 'shortName', 'Team 2'));
+                const t1Logo = getVal(t1, 'flag.src', '');
+                const t2Logo = getVal(t2, 'flag.src', '');
+
+                const primary = getVal(match, 'STREAMING_CDN.Primary_Playback_URL', null);
+                const hasStream = !!primary;
+
+                let statusHtml = '';
+                if (statusCat === 'live') {
+                    statusHtml = `
+                        <span class="status-badge">
+                            <span class="pulse"></span> LIVE
+                        </span>
+                    `;
+                } else if (statusCat === 'ended') {
+                    statusHtml = `
+                        <span class="status-badge ended">
+                            <span class="pulse"></span> Ended
+                        </span>
+                    `;
+                } else {
+                    statusHtml = `
+                        <span class="status-badge upcoming">
+                            <span class="pulse"></span> ${safe(status) || 'Upcoming'}
+                        </span>
+                    `;
+                }
+
+                const watchDisabled = !live || !hasStream || !id;
+                const watchUrl = id ? `player.html?id=${encodeURIComponent(id)}` : '#';
+
+                html += `
+                    <div class="match-card" data-status="${statusCat}" data-match-id="${safe(id)}">
+                        <img class="thumb" src="${safe(thumb)}" alt="${safe(t1Name)} vs ${safe(t2Name)}" loading="lazy"
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22180%22 viewBox=%220 0 320 180%22%3E%3Crect fill=%22%23121212%22 width=%22320%22 height=%22180%22/%3E%3Ctext x=%22160%22 y=%2295%22 text-anchor=%22middle%22 fill=%22%23333%22 font-family=%22sans-serif%22 font-size=%2216%22%3ENo Image%3C/text%3E%3C/svg%3E'" />
+                        <div class="body">
+                            <div class="top-row">
+                                <span class="category">${safe(category) || 'General'}</span>
+                                ${statusHtml}
+                            </div>
+                            ${tournament ? `<div class="tournament"><i class="fas fa-trophy"></i>${safe(tournament)}</div>` : ''}
+                            <div class="teams">
+                                <div class="team">
+                                    ${t1Logo ? `<img src="${safe(t1Logo)}" alt="${safe(t1Name)}" loading="lazy" onerror="this.style.display='none'">` : ''}
+                                    <span class="name">${safe(t1Name)}</span>
+                                </div>
+                                <div class="vs">VS</div>
+                                <div class="team">
+                                    ${t2Logo ? `<img src="${safe(t2Logo)}" alt="${safe(t2Name)}" loading="lazy" onerror="this.style.display='none'">` : ''}
+                                    <span class="name">${safe(t2Name)}</span>
+                                </div>
+                            </div>
+                            <button class="watch-btn" ${watchDisabled ? 'disabled' : ''}
+                                    onclick="${!watchDisabled ? `window.location.href='${watchUrl}'` : ''}">
+                                ${watchDisabled ? '<i class="fas fa-clock"></i> Not Available' : '<i class="fas fa-play"></i> Watch Stream'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            grid.innerHTML = html;
+        }
+
+        /* ============================================================
+           FILTER
+           ============================================================ */
+        function applyFilter(filter) {
+            activeFilter = filter;
+            const cards = grid.querySelectorAll('.match-card');
+            let visible = 0;
+            cards.forEach(card => {
+                const status = card.dataset.status || 'incoming';
+                let show = false;
+                if (filter === 'all') show = true;
+                else if (filter === 'live') show = (status === 'live');
+                else if (filter === 'incoming') show = (status === 'incoming');
+                else if (filter === 'ended') show = (status === 'ended');
+                card.classList.toggle('filtered-out', !show);
+                if (show) visible++;
+            });
+
+            filterTabs.forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.filter === filter);
+            });
+
+            const existingMsg = grid.querySelector('.filter-empty-msg');
+            if (visible === 0 && cards.length > 0) {
+                if (!existingMsg) {
+                    const msg = document.createElement('div');
+                    msg.className = 'error-wrap filter-empty-msg';
+                    msg.style.color = 'var(--text-muted)';
+                    msg.innerHTML = `<i class="fas fa-filter"></i><p>No ${filter} matches found.</p>`;
+                    grid.appendChild(msg);
+                }
+            } else if (existingMsg) {
+                existingMsg.remove();
+            }
+        }
+
+        function updateCounts(matches) {
+            let live = 0,
+                incoming = 0,
+                ended = 0;
+            for (const m of matches) {
+                const cat = getStatusCategory(getVal(m, 'status', ''));
+                if (cat === 'live') live++;
+                else if (cat === 'ended') ended++;
+                else incoming++;
+            }
+            countAll.textContent = matches.length;
+            countLive.textContent = live;
+            countIncoming.textContent = incoming;
+            countEnded.textContent = ended;
+        }
+
+        /* ============================================================
+           INFO BAR
+           ============================================================ */
+        function updateInfo(matches) {
+            const now = new Date();
+            lastUpdatedEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit',
+                second: '2-digit' });
+
+            const liveCount = matches.filter(m => isLive(getVal(m, 'status', ''))).length;
+            liveCountEl.textContent = liveCount;
+        }
+
+        /* ============================================================
+           FILTER TAB EVENTS
+           ============================================================ */
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const filter = tab.dataset.filter;
+                if (filter !== activeFilter) {
+                    applyFilter(filter);
+                }
+            });
+        });
+
+        /* ============================================================
+           REFRESH
+           ============================================================ */
+        refreshBtn.addEventListener('click', fetchMatches);
+
+        /* ============================================================
+           BOOT
+           ============================================================ */
+        fetchMatches();
+    </script>
+</body>
+</html>
